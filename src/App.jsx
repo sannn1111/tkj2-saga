@@ -7,7 +7,7 @@ import Chat from "./components/ChatAnonim"
 import AOS from "aos"
 import "aos/dist/aos.css"
 
-function App() {
+function Apps() {
 	useEffect(() => {
 		AOS.init()
 		AOS.refresh()
