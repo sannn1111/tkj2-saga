@@ -18,19 +18,6 @@ const Schedule = () => {
     AOS.refresh()
   }, [])
 
-  // Daftar siswa urut absen 1–42
-  const students = [
-    "Victor","Agus","Ahmad","Zakki","Akbar",
-    "Andre","Aris","Asri","Aswin","Aurelius",
-    "Bowo","Candra","Danang","Daniel","Davin",
-    "Herlyno","Diky","Dita","Elsa","Fawas",
-    "Ferindo","Galang","Hana","Haryadi","Marisa",
-    "Maylinda","Mei","Miftah","Huda","Aziz",
-    "Rizky","Nadien","Nanda","Pratama","Putri",
-    "Siska","Sony","Suci","Unggun","Vicky",
-    "Wahyu","Zalfa"
-  ]
-
   // Jadwal Piket Biasa (existing)
   const regularPiketGroup = [
     ["Victor","Agus","Hudha","Zakki","Akbar","Andre","Aris","Asri","Aswin"],
@@ -40,27 +27,50 @@ const Schedule = () => {
     ["Putri","Siska","Sony","Suci","Unggun","Zalfa","Wahyu","Vicky"]
   ]
 
-  // Hitung minggu berjalan sejak tanggal referensi
-  const getCurrentWeekNumber = () => {
-    const startDate = new Date("2025-09-15")
-    const diffMs = Date.now() - startDate.getTime()
-    const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7))
-    return diffWeeks + 1
-  }
+  // Jadwal Piket MBG per Kloter (5 hari per kloter)
+  const mbgKloter = [
+    ["Viktor", "Agus", "Hudha", "Zaki", "Unggul", "Zalfa"],
+    ["Aris", "Asih", "Aswin", "Aurelius", "Andre"],
+    ["Bowo", "Candra", "Danang", "Daniel", "Davin"],
+    ["Herlyno", "Diky", "Dita", "Elsa", "Fawaz"],
+    ["Feri", "Jalu", "Linda", "Haryadu", "Marisa"],
+    ["May", "Mey", "Miftha", "Huda", "Aziz"],
+    ["Rizky", "Nadien", "Nanda", "Riksan", "Putri"],
+    ["Siska", "Sony", "Arum", "Unggun", "Farel", "Gilang"]
+  ]
 
-  // Buat jadwal MBG per minggu, 5 hari × 5 siswa, melingkar tanpa ulang
-  const getWeeklyMBGSchedule = (weekNum) => {
-    const perDay = 5, days = 5
-    const startIdx = (weekNum - 1) * perDay * days
-    const schedule = {}
-    for (let d = 1; d <= days; d++) {
-      schedule[d] = []
-      for (let i = 0; i < perDay; i++) {
-        const idx = (startIdx + (d-1)*perDay + i) % students.length
-        schedule[d].push(students[idx])
+  // Hitung kloter aktif berdasarkan hari (ganti setiap hari)
+  const getCurrentKloter = () => {
+    // Tanggal referensi: 27 Oktober 2025 (Senin) = Kloter 4
+    const startDate = new Date("2025-10-27")
+    const today = new Date()
+    
+    // Reset waktu ke tengah malam untuk perhitungan hari yang akurat
+    startDate.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0)
+    
+    const diffMs = today.getTime() - startDate.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    // Hitung hari kerja yang sudah berlalu (skip weekend)
+    let workDays = 0
+    const tempDate = new Date(startDate)
+    while (tempDate <= today) {
+      const dayOfWeek = tempDate.getDay()
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Senin-Jumat
+        workDays++
       }
+      tempDate.setDate(tempDate.getDate() + 1)
     }
-    return schedule
+    
+    // Kloter 4 dimulai 27 Oktober (hari kerja pertama = 0)
+    // Setiap hari ganti kloter
+    const kloterIndex = (3 + workDays - 1) % mbgKloter.length
+    
+    return {
+      number: kloterIndex + 1,
+      members: mbgKloter[kloterIndex]
+    }
   }
 
   const dayComponents = [null, Senin, Selasa, Rabu, Kamis, Jumat]
@@ -68,9 +78,8 @@ const Schedule = () => {
 
   // Ambil data piket untuk hari ini
   const currentRegularPiket = regularPiketGroup[todayIndex - 1] || []
-  const currentWeek = getCurrentWeekNumber()
-  const mbgSchedule = getWeeklyMBGSchedule(currentWeek)
-  const currentMBGPiket = mbgSchedule[todayIndex] || []
+  const currentKloter = getCurrentKloter()
+  const currentMBGPiket = (todayIndex >= 1 && todayIndex <= 5) ? currentKloter.members : []
 
   return (
     <>
@@ -121,7 +130,7 @@ const Schedule = () => {
             Piket MBG
           </div>
           <div className="text-sm font-medium mb-5 opacity-75" data-aos="fade-up" data-aos-duration="550">
-            Minggu {currentWeek}
+            Kloter {currentKloter.number}
           </div>
           {currentMBGPiket.length > 0 ? (
             currentMBGPiket.map((name, i) => (
